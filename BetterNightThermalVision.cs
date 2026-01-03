@@ -30,28 +30,28 @@ namespace BetterVision
         private void Awake()
         {
             ScopeFps = Config.Bind("Thermal Optic", "FPS Limit", false);
-            ScopeGlitch = Config.Bind("Thermal Optic", "Glitch Refresh", false);
+            ScopeGlitch = Config.Bind("Thermal Optic", "Scanline", false);
             ScopeMotion = Config.Bind("Thermal Optic", "Motion Blur", false);
             ScopeNoise = Config.Bind("Thermal Optic", "Noise", false);
             ScopePixel = Config.Bind("Thermal Optic", "Pixelation", false);
-            ScopeChromatic = Config.Bind("Thermal Optic", "Chromatic Aberration", false);
-            ScopeMaxDistance = Config.Bind("Thermal Optic", "Max Distance", 500f,
+            ScopeChromatic = Config.Bind("Thermal Optic", "Edge Aberration", false);
+            ScopeMaxDistance = Config.Bind("Thermal Optic", "View Distance", 500f,
                 new ConfigDescription(
-                    "Maximum thermal optic distance (100–1000)",
-                    new AcceptableValueRange<float>(100f, 1000f)
+                    "Maximum thermal optic distance (100–2000)",
+                    new AcceptableValueRange<float>(100f, 2000f)
                 )
             );
 
 
             T7Fps = Config.Bind("T7 Thermal", "FPS Limit", false);
-            T7Glitch = Config.Bind("T7 Thermal", "Glitch Refresh", false);
+            T7Glitch = Config.Bind("T7 Thermal", "Glitch effect", false);
             T7Motion = Config.Bind("T7 Thermal", "Motion Blur", false);
             T7Noise = Config.Bind("T7 Thermal", "Noise", false);
             T7Pixel = Config.Bind("T7 Thermal", "Pixelation", false);
 
             NVNoise = Config.Bind("Night Vision", "Noise", false);
 
-            NVT7Mask = Config.Bind("Black Mask", "Helmet NV & T7 Mask", false);
+            NVT7Mask = Config.Bind("Black Mask", "Helmet NV & T7", false);
 
             new Harmony("ciallo.BetterNightThermalVision").PatchAll();
         }
