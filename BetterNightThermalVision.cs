@@ -6,7 +6,7 @@ using HarmonyLib;
 
 namespace BetterVision
 {
-    [BepInPlugin("ciallo.BetterNightThermalVision", "Better Night Thermal Vision", "2.0.0")]
+    [BepInPlugin("ciallo.BetterNightThermalVision", "Better Night Thermal Vision", "1.2")]
     public class BetterVision : BaseUnityPlugin
     {
         internal static ConfigEntry<bool> ScopeFps;
