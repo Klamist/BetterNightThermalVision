@@ -15,6 +15,7 @@ namespace BetterVision
         internal static ConfigEntry<bool> ScopeNoise;
         internal static ConfigEntry<bool> ScopePixel;
         internal static ConfigEntry<bool> ScopeChromatic;
+        internal static ConfigEntry<float> ScopeMaxDistance;
 
         internal static ConfigEntry<bool> T7Fps;
         internal static ConfigEntry<bool> T7Glitch;
@@ -34,6 +35,13 @@ namespace BetterVision
             ScopeNoise = Config.Bind("Thermal Optic", "Noise", false);
             ScopePixel = Config.Bind("Thermal Optic", "Pixelation", false);
             ScopeChromatic = Config.Bind("Thermal Optic", "Chromatic Aberration", false);
+            ScopeMaxDistance = Config.Bind("Thermal Optic", "Max Distance", 500f,
+                new ConfigDescription(
+                    "Maximum thermal optic distance (100–1000)",
+                    new AcceptableValueRange<float>(100f, 1000f)
+                )
+            );
+
 
             T7Fps = Config.Bind("T7 Thermal", "FPS Limit", false);
             T7Glitch = Config.Bind("T7 Thermal", "Glitch Refresh", false);
@@ -63,7 +71,6 @@ namespace BetterVision
             tv.IsMotionBlurred = BetterVision.ScopeMotion.Value;
             tv.IsNoisy = BetterVision.ScopeNoise.Value;
             tv.IsPixelated = BetterVision.ScopePixel.Value;
-
             tv.SetMaterialProperties();
 
             ChromaticAberration ca = tv.GetComponent<ChromaticAberration>();
@@ -73,8 +80,15 @@ namespace BetterVision
                     ? tv.ChromaticAberrationThermalShift
                     : 0f;
             }
+
+            var cam = __instance.GetComponent<UnityEngine.Camera>();
+            if (cam != null)
+            {
+                cam.farClipPlane = BetterVision.ScopeMaxDistance.Value;
+            }
         }
     }
+
 
     [HarmonyPatch(typeof(PlayerCameraController), "method_5")]
     public class Patch_T7Thermal
