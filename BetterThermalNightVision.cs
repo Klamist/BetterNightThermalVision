@@ -93,7 +93,7 @@ namespace BetterVision
             T7RedHot = Config.Bind("T7 Thermal", "White-Red Mode", false);
             Adv_MainTexColorCoef = Config.Bind("T7 Thermal", "WR MainTexColorCoef - Brightness", 0.7f,
                 new ConfigDescription("", new AcceptableValueRange<float>(0.001f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
-            Adv_MinimumTemperatureValue = Config.Bind("T7 Thermal", "WR MinTempValue - ColorDiff", 0.2f,
+            Adv_MinimumTemperatureValue = Config.Bind("T7 Thermal", "WR MinTempValue - ColorDiff", 0.1f,
                 new ConfigDescription("", new AcceptableValueRange<float>(0.001f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
             Adv_RampShift = Config.Bind("T7 Thermal", "WR RampShift - ColorShift", -0.45f,
                 new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
