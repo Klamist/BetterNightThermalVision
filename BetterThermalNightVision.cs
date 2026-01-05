@@ -22,6 +22,7 @@ namespace BetterVision
         internal static ConfigEntry<float> ScopeDepthFade;
 
         internal static ConfigEntry<bool> ScopeUseCustomColor;
+        internal static bool ScopeColorInitialized = false;
         internal static ConfigEntry<float> ScopeMainTexColorCoef;
         internal static ConfigEntry<float> ScopeMinTempValue;
         internal static ConfigEntry<float> ScopeRampShift;
@@ -134,10 +135,13 @@ namespace BetterVision
 
             if (vc != null)
             {
-                BetterVision.ScopeMainTexColorCoef.Value = vc.MainTexColorCoef;
-                BetterVision.ScopeMinTempValue.Value = vc.MinimumTemperatureValue;
-                BetterVision.ScopeRampShift.Value = vc.RampShift;
-
+                if (!BetterVision.ScopeColorInitialized)
+                {
+                    BetterVision.ScopeMainTexColorCoef.Value = vc.MainTexColorCoef;
+                    BetterVision.ScopeMinTempValue.Value = vc.MinimumTemperatureValue;
+                    BetterVision.ScopeRampShift.Value = vc.RampShift;
+                    BetterVision.ScopeColorInitialized = true;
+                }
                 if (BetterVision.ScopeUseCustomColor.Value)
                 {
                     vc.MainTexColorCoef = BetterVision.ScopeMainTexColorCoef.Value;
