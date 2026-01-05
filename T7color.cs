@@ -66,9 +66,3 @@ namespace BetterVision
         }
     }
 }
-internal static class ThermalDefaults
-{
-    public static Dictionary<int, float> OriginalMinTemp = new Dictionary<int, float>();
-    public static Dictionary<int, float> OriginalMainTexColorCoef = new Dictionary<int, float>();
-    public static Dictionary<int, float> OriginalRampShift = new Dictionary<int, float>();
-}

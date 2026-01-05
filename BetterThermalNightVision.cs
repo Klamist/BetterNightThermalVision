@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace BetterVision
 {
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.2.0")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.2.1")]
     public class BetterVision : BaseUnityPlugin
     {
         internal static ConfigEntry<bool> ScopeFps;
@@ -65,12 +65,13 @@ namespace BetterVision
 
             ScopeMaxDistance = Config.Bind("Thermal Optic", "Distance", 500f,
                 new ConfigDescription("", new AcceptableValueRange<float>(100f, 2000f)));
-            ScopeDepthFade = Config.Bind("Thermal Optic", "Depth Fade (...)", 0.01f,
+            ScopeDepthFade = Config.Bind("Thermal Optic", "Depth Fade [?]", 0.01f,
                 new ConfigDescription("Lower is clearer on far distance",
                     new AcceptableValueRange<float>(0.001f, 0.050f)));
 
-            ScopeUseCustomColor = Config.Bind("Thermal Optic", "Use Custom Color", false,
-                new ConfigDescription("", null, new ConfigurationManagerAttributes { IsAdvanced = true }));
+            ScopeUseCustomColor = Config.Bind("Thermal Optic", "Use Custom Color [?]", false,
+                new ConfigDescription("If enable, the values of current thermal scope can only revert after raid. Following values auto read from first thermal used in raid.",
+                    null, new ConfigurationManagerAttributes { IsAdvanced = true }));
             ScopeMainTexColorCoef = Config.Bind("Thermal Optic", "Use MainTexColorCoef - Brightness", 0.7f,
                 new ConfigDescription("", new AcceptableValueRange<float>(0.001f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
             ScopeMinTempValue = Config.Bind("Thermal Optic", "Use MinTempValue - ColorDiff", 0.3f,
@@ -84,9 +85,9 @@ namespace BetterVision
             T7Noise = Config.Bind("T7 Thermal", "Noise", false);
             T7Pixel = Config.Bind("T7 Thermal", "Pixelation", false);
             T7Blur = Config.Bind("T7 Thermal", "Blur", false);
-            T7BlockScope = Config.Bind("T7 Thermal", "Block Optic Scope (...)", false,
-                new ConfigDescription("Only toggle OUTSIDE raid. Not thermographic in zoomable scopes"));
-            T7DepthFade = Config.Bind("T7 Thermal", "Depth Fade (...)", 0.01f,
+            T7BlockScope = Config.Bind("T7 Thermal", "Block Optic Scope [?]", false,
+                new ConfigDescription("If disable, can only revert block after raid. Zoomable scopes not have thermograph"));
+            T7DepthFade = Config.Bind("T7 Thermal", "Depth Fade [?]", 0.01f,
                 new ConfigDescription("Lower is more visible on far distance. T7 Default is 0.03",
                     new AcceptableValueRange<float>(0.001f, 0.050f)));
 
@@ -133,28 +134,16 @@ namespace BetterVision
 
             if (vc != null)
             {
-                int id = tv.GetInstanceID();
+                BetterVision.ScopeMainTexColorCoef.Value = vc.MainTexColorCoef;
+                BetterVision.ScopeMinTempValue.Value = vc.MinimumTemperatureValue;
+                BetterVision.ScopeRampShift.Value = vc.RampShift;
 
-                // 缓存默认值（只缓存一次）
-                if (!ThermalDefaults.OriginalMinTemp.ContainsKey(id))
-                {
-                    ThermalDefaults.OriginalMinTemp[id] = vc.MinimumTemperatureValue;
-                    ThermalDefaults.OriginalMainTexColorCoef[id] = vc.MainTexColorCoef;
-                    ThermalDefaults.OriginalRampShift[id] = vc.RampShift;
-                }
+                if (!BetterVision.ScopeUseCustomColor.Value)
+                    return;
 
-                if (BetterVision.ScopeUseCustomColor.Value)
-                {
-                    vc.MainTexColorCoef = BetterVision.ScopeMainTexColorCoef.Value;
-                    vc.MinimumTemperatureValue = BetterVision.ScopeMinTempValue.Value;
-                    vc.RampShift = BetterVision.ScopeRampShift.Value;
-                }
-                else
-                {
-                    vc.MinimumTemperatureValue = ThermalDefaults.OriginalMinTemp[id];
-                    vc.MainTexColorCoef = ThermalDefaults.OriginalMainTexColorCoef[id];
-                    vc.RampShift = ThermalDefaults.OriginalRampShift[id];
-                }
+                vc.MainTexColorCoef = BetterVision.ScopeMainTexColorCoef.Value;
+                vc.MinimumTemperatureValue = BetterVision.ScopeMinTempValue.Value;
+                vc.RampShift = BetterVision.ScopeRampShift.Value;
             }
 
             ChromaticAberration ca = tv.GetComponent<ChromaticAberration>();
@@ -174,8 +163,6 @@ namespace BetterVision
             tv.SetMaterialProperties();
         }
     }
-
-
 
     [HarmonyPatch(typeof(PlayerCameraController), "method_5")]
     public class Patch_T7Thermal
