@@ -65,12 +65,12 @@ namespace BetterVision
 
             ScopeMaxDistance = Config.Bind("Thermal Optic", "Distance", 500f,
                 new ConfigDescription("", new AcceptableValueRange<float>(100f, 2000f)));
-            ScopeDepthFade = Config.Bind("Thermal Optic", "Depth Fade [?]", 0.01f,
+            ScopeDepthFade = Config.Bind("Thermal Optic", "Depth Fade (?)", 0.01f,
                 new ConfigDescription("Lower is clearer on far distance",
                     new AcceptableValueRange<float>(0.001f, 0.050f)));
 
-            ScopeUseCustomColor = Config.Bind("Thermal Optic", "Use Custom Color [?]", false,
-                new ConfigDescription("If enable, the values of current thermal scope can only revert after raid. Following values auto read from first thermal used in raid.",
+            ScopeUseCustomColor = Config.Bind("Thermal Optic", "Use Custom Color (?)", false,
+                new ConfigDescription("When enabled, the used thermal scope(s) can only revert after raid. Following values are auto read from first thermal scope used in raid.",
                     null, new ConfigurationManagerAttributes { IsAdvanced = true }));
             ScopeMainTexColorCoef = Config.Bind("Thermal Optic", "Use MainTexColorCoef - Brightness", 0.7f,
                 new ConfigDescription("", new AcceptableValueRange<float>(0.001f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
@@ -85,9 +85,9 @@ namespace BetterVision
             T7Noise = Config.Bind("T7 Thermal", "Noise", false);
             T7Pixel = Config.Bind("T7 Thermal", "Pixelation", false);
             T7Blur = Config.Bind("T7 Thermal", "Blur", false);
-            T7BlockScope = Config.Bind("T7 Thermal", "Block Optic Scope [?]", false,
-                new ConfigDescription("If disable, can only revert block after raid. Zoomable scopes not have thermograph"));
-            T7DepthFade = Config.Bind("T7 Thermal", "Depth Fade [?]", 0.01f,
+            T7BlockScope = Config.Bind("T7 Thermal", "Block Optic Scope (?)", false,
+                new ConfigDescription("If disable, can only revert block after raid. Zoomable scopes have no thermograph due to rendering of EFT"));
+            T7DepthFade = Config.Bind("T7 Thermal", "Depth Fade (?)", 0.01f,
                 new ConfigDescription("Lower is more visible on far distance. T7 Default is 0.03",
                     new AcceptableValueRange<float>(0.001f, 0.050f)));
 
