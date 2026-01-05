@@ -138,12 +138,12 @@ namespace BetterVision
                 BetterVision.ScopeMinTempValue.Value = vc.MinimumTemperatureValue;
                 BetterVision.ScopeRampShift.Value = vc.RampShift;
 
-                if (!BetterVision.ScopeUseCustomColor.Value)
-                    return;
-
-                vc.MainTexColorCoef = BetterVision.ScopeMainTexColorCoef.Value;
-                vc.MinimumTemperatureValue = BetterVision.ScopeMinTempValue.Value;
-                vc.RampShift = BetterVision.ScopeRampShift.Value;
+                if (BetterVision.ScopeUseCustomColor.Value)
+                {
+                    vc.MainTexColorCoef = BetterVision.ScopeMainTexColorCoef.Value;
+                    vc.MinimumTemperatureValue = BetterVision.ScopeMinTempValue.Value;
+                    vc.RampShift = BetterVision.ScopeRampShift.Value;
+                }
             }
 
             ChromaticAberration ca = tv.GetComponent<ChromaticAberration>();
