@@ -1,5 +1,4 @@
 ﻿using EFT.InventoryLogic;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace BetterVision

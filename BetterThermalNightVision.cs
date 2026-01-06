@@ -8,9 +8,12 @@ using UnityEngine;
 
 namespace BetterVision
 {
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.2.1")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.2.3")]
     public class BetterVision : BaseUnityPlugin
     {
+        internal const int ConfigVersion = 123;
+        internal static ConfigEntry<int> ConfigFileVersion;
+
         internal static ConfigEntry<bool> ScopeFps;
         internal static ConfigEntry<bool> ScopeGlitch;
         internal static ConfigEntry<bool> ScopeMotion;
@@ -45,6 +48,18 @@ namespace BetterVision
 
         private void Awake()
         {
+            string configPath = Config.ConfigFilePath;
+            int oldVersion = 0;
+            if (File.Exists(configPath))
+            {
+                var temp = new ConfigFile(configPath, true);
+                oldVersion = temp.Bind("Internal", "ConfigVersion", 0).Value;
+            }
+            if (oldVersion != ConfigVersion)
+                File.Delete(configPath);
+            ConfigFileVersion = Config.Bind("Internal", "ConfigVersion", ConfigVersion,
+                new ConfigDescription("", null, new ConfigurationManagerAttributes { Browsable = false }));
+
             string pluginDir = Path.GetDirectoryName(Info.Location);
             string pngPath = Path.Combine(pluginDir, "ColorRamp.png");
 
@@ -64,7 +79,7 @@ namespace BetterVision
             ScopeChromatic = Config.Bind("Thermal Optic", "Edge Aberration", false);
             ScopeBlur = Config.Bind("Thermal Optic", "Blur", false);
 
-            ScopeMaxDistance = Config.Bind("Thermal Optic", "Distance", 500f,
+            ScopeMaxDistance = Config.Bind("Thermal Optic", "Distance", 1000f,
                 new ConfigDescription("", new AcceptableValueRange<float>(100f, 2000f)));
             ScopeDepthFade = Config.Bind("Thermal Optic", "Depth Fade (?)", 0.01f,
                 new ConfigDescription("Lower is clearer on far distance",
@@ -74,9 +89,9 @@ namespace BetterVision
                 new ConfigDescription("When enabled, the used thermal scope(s) can only revert after raid. Following values are auto read from first thermal scope used in raid.",
                     null, new ConfigurationManagerAttributes { IsAdvanced = true }));
             ScopeMainTexColorCoef = Config.Bind("Thermal Optic", "Use MainTexColorCoef - Brightness", 0.7f,
-                new ConfigDescription("", new AcceptableValueRange<float>(0.001f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
+                new ConfigDescription("", new AcceptableValueRange<float>(0.25f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
             ScopeMinTempValue = Config.Bind("Thermal Optic", "Use MinTempValue - ColorDiff", 0.3f,
-                new ConfigDescription("", new AcceptableValueRange<float>(0.001f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
+                new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
             ScopeRampShift = Config.Bind("Thermal Optic", "Use RampShift - ColorShift", -0.3f,
                 new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
 
@@ -94,9 +109,9 @@ namespace BetterVision
 
             T7RedHot = Config.Bind("T7 Thermal", "White-Red Mode", false);
             Adv_MainTexColorCoef = Config.Bind("T7 Thermal", "WR MainTexColorCoef - Brightness", 0.7f,
-                new ConfigDescription("", new AcceptableValueRange<float>(0.001f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
+                new ConfigDescription("", new AcceptableValueRange<float>(0.25f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
             Adv_MinimumTemperatureValue = Config.Bind("T7 Thermal", "WR MinTempValue - ColorDiff", 0.1f,
-                new ConfigDescription("", new AcceptableValueRange<float>(0.001f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
+                new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
             Adv_RampShift = Config.Bind("T7 Thermal", "WR RampShift - ColorShift", -0.45f,
                 new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
 
@@ -110,8 +125,12 @@ namespace BetterVision
     [HarmonyPatch(typeof(OpticComponentUpdater), "CopyComponentFromOptic")]
     public class Patch_OpticThermal
     {
-        static void Postfix(OpticComponentUpdater __instance)
+        static void Postfix(OpticComponentUpdater __instance, OpticSight opticSight)
         {
+            var thermalData = opticSight.ScopeData.ThermalVisionData;
+            if (thermalData == null || !thermalData.ThermalVision)
+                return;
+
             ThermalVision tv = __instance.GetComponent<ThermalVision>();
             if (tv == null)
                 return;
@@ -121,6 +140,7 @@ namespace BetterVision
             tv.IsMotionBlurred = BetterVision.ScopeMotion.Value;
             tv.IsNoisy = BetterVision.ScopeNoise.Value;
             tv.IsPixelated = BetterVision.ScopePixel.Value;
+            tv.ThermalVisionUtilities.DepthFade = BetterVision.ScopeDepthFade.Value;
 
             if (!BetterVision.ScopeBlur.Value)
             {
@@ -128,7 +148,13 @@ namespace BetterVision
                 tv.UnsharpBias = 0f;
             }
 
-            tv.ThermalVisionUtilities.DepthFade = BetterVision.ScopeDepthFade.Value;
+            ChromaticAberration ca = tv.GetComponent<ChromaticAberration>();
+            if (ca != null)
+            {
+                ca.Shift = BetterVision.ScopeChromatic.Value
+                    ? tv.ChromaticAberrationThermalShift
+                    : 0f;
+            }
 
             var util = tv.ThermalVisionUtilities;
             var vc = util?.ValuesCoefs;
@@ -150,19 +176,9 @@ namespace BetterVision
                 }
             }
 
-            ChromaticAberration ca = tv.GetComponent<ChromaticAberration>();
-            if (ca != null)
-            {
-                ca.Shift = BetterVision.ScopeChromatic.Value
-                    ? tv.ChromaticAberrationThermalShift
-                    : 0f;
-            }
-
             var cam = __instance.GetComponent<UnityEngine.Camera>();
             if (cam != null)
-            {
                 cam.farClipPlane = BetterVision.ScopeMaxDistance.Value;
-            }
 
             tv.SetMaterialProperties();
         }
