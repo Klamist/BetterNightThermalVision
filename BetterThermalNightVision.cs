@@ -8,10 +8,10 @@ using UnityEngine;
 
 namespace BetterVision
 {
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.2.3")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.2.2")]
     public class BetterVision : BaseUnityPlugin
     {
-        internal const int ConfigVersion = 123;
+        internal const int ConfigVersion = 122;
         internal static ConfigEntry<int> ConfigFileVersion;
 
         internal static ConfigEntry<bool> ScopeFps;
@@ -79,7 +79,7 @@ namespace BetterVision
             ScopeChromatic = Config.Bind("Thermal Optic", "Edge Aberration", false);
             ScopeBlur = Config.Bind("Thermal Optic", "Blur", false);
 
-            ScopeMaxDistance = Config.Bind("Thermal Optic", "Distance", 1000f,
+            ScopeMaxDistance = Config.Bind("Thermal Optic", "Distance", 500f,
                 new ConfigDescription("", new AcceptableValueRange<float>(100f, 2000f)));
             ScopeDepthFade = Config.Bind("Thermal Optic", "Depth Fade (?)", 0.01f,
                 new ConfigDescription("Lower is clearer on far distance",
@@ -88,11 +88,11 @@ namespace BetterVision
             ScopeUseCustomColor = Config.Bind("Thermal Optic", "Use Custom Color (?)", false,
                 new ConfigDescription("When enabled, the used thermal scope(s) can only revert after raid. Following values are auto read from first thermal scope used in raid.",
                     null, new ConfigurationManagerAttributes { IsAdvanced = true }));
-            ScopeMainTexColorCoef = Config.Bind("Thermal Optic", "Use MainTexColorCoef - Brightness", 0.7f,
-                new ConfigDescription("", new AcceptableValueRange<float>(0.25f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
-            ScopeMinTempValue = Config.Bind("Thermal Optic", "Use MinTempValue - ColorDiff", 0.3f,
+            ScopeMainTexColorCoef = Config.Bind("Thermal Optic", "Use MainTexColorCoef - Brightness", 0.5f,
+                new ConfigDescription("", new AcceptableValueRange<float>(0.01f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
+            ScopeMinTempValue = Config.Bind("Thermal Optic", "Use MinTempValue - ColorDiff", 0.2f,
                 new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
-            ScopeRampShift = Config.Bind("Thermal Optic", "Use RampShift - ColorShift", -0.3f,
+            ScopeRampShift = Config.Bind("Thermal Optic", "Use RampShift - ColorShift", -0.5f,
                 new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
 
             T7Fps = Config.Bind("T7 Thermal", "FPS Limit", false);
@@ -109,7 +109,7 @@ namespace BetterVision
 
             T7RedHot = Config.Bind("T7 Thermal", "White-Red Mode", false);
             Adv_MainTexColorCoef = Config.Bind("T7 Thermal", "WR MainTexColorCoef - Brightness", 0.7f,
-                new ConfigDescription("", new AcceptableValueRange<float>(0.25f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
+                new ConfigDescription("", new AcceptableValueRange<float>(0.01f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
             Adv_MinimumTemperatureValue = Config.Bind("T7 Thermal", "WR MinTempValue - ColorDiff", 0.1f,
                 new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
             Adv_RampShift = Config.Bind("T7 Thermal", "WR RampShift - ColorShift", -0.45f,
