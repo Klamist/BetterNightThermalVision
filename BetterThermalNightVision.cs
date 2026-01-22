@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace BetterVision
 {
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.2.2")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.2.3")]
     public class BetterVision : BaseUnityPlugin
     {
         internal const int ConfigVersion = 122;
@@ -208,15 +208,21 @@ namespace BetterVision
         }
     }
 
-    [HarmonyPatch(typeof(NightVision), "ApplySettings")]
+    [HarmonyPatch(typeof(PlayerCameraController), "method_4")]
     public class Patch_NV_Noise
     {
-        static void Postfix(NightVision __instance)
+        static void Postfix()
         {
             if (BetterVision.NVNoise.Value)
                 return;
-            __instance.NoiseIntensity = 0f;
-            __instance.NoiseScale = 0f;
+
+            NightVision nv = CameraClass.Instance.NightVision;
+            if (nv == null)
+                return;
+
+            nv.NoiseIntensity = 0f;
+            nv.NoiseScale = 0f;
+            nv.ApplySettings();
         }
     }
 
