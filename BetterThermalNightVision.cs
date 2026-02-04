@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace BetterVision
 {
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.3.0")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.3.1")]
     public class BetterVision : BaseUnityPlugin
     {
         internal const int ConfigVersion = 130;
@@ -125,9 +125,9 @@ namespace BetterVision
                 new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
 
             NVNoise = Config.Bind("Night Vision", "Noise", false);
-            NVScopeDefault = Config.Bind("Night Vision", "Optic Bright Default(?)", false,
-                new ConfigDescription("Whether enable vanilla scope vision brightness when using helmet NV, which is darker for zoomable scopes"));
-            NVScopeBrightness = Config.Bind("Night Vision", "Optic Brightness", 1.0f,
+            NVScopeDefault = Config.Bind("Night Vision", "Optic Bright Default (?)", false,
+                new ConfigDescription("Whether enable vanilla scope vision brightness when using helmet NV, which is darker in zoomable scopes"));
+            NVScopeBrightness = Config.Bind("Night Vision", "Optic Brightness (?)", 1.0f,
                 new ConfigDescription("Need disable Optic Bright Default",
                     new AcceptableValueRange<float>(0.5f, 3f)));
             NVT7Mask = Config.Bind("Black Screen Mask", "Helmet NV & T7", false);
