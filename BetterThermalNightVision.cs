@@ -8,11 +8,12 @@ using UnityEngine;
 
 namespace BetterVision
 {
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.2.3")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.3.0")]
     public class BetterVision : BaseUnityPlugin
     {
-        internal const int ConfigVersion = 122;
+        internal const int ConfigVersion = 130;
         internal static ConfigEntry<int> ConfigFileVersion;
+        public static BetterVision Instance;
 
         internal static ConfigEntry<bool> ScopeFps;
         internal static ConfigEntry<bool> ScopeGlitch;
@@ -44,10 +45,18 @@ namespace BetterVision
         internal static ConfigEntry<float> Adv_RampShift;
 
         internal static ConfigEntry<bool> NVNoise;
+        internal static ConfigEntry<bool> NVScopeDefault;
+        internal static ConfigEntry<float> NVScopeBrightness;
         internal static ConfigEntry<bool> NVT7Mask;
+
+        public void Log(string msg)
+        {
+            Logger.LogInfo(msg);
+        }
 
         private void Awake()
         {
+            Instance = this;
             string configPath = Config.ConfigFilePath;
             int oldVersion = 0;
             if (File.Exists(configPath))
@@ -116,6 +125,11 @@ namespace BetterVision
                 new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
 
             NVNoise = Config.Bind("Night Vision", "Noise", false);
+            NVScopeDefault = Config.Bind("Night Vision", "Optic Bright Default(?)", false,
+                new ConfigDescription("Whether enable vanilla scope vision brightness when using helmet NV, which is darker for zoomable scopes"));
+            NVScopeBrightness = Config.Bind("Night Vision", "Optic Brightness", 1.0f,
+                new ConfigDescription("Need disable Optic Bright Default",
+                    new AcceptableValueRange<float>(0.5f, 3f)));
             NVT7Mask = Config.Bind("Black Screen Mask", "Helmet NV & T7", false);
 
             new Harmony("ciallo.BetterThermalNightVision").PatchAll();
