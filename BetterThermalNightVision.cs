@@ -8,10 +8,10 @@ using UnityEngine;
 
 namespace BetterVision
 {
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.3.1")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.3.2")]
     public class BetterVision : BaseUnityPlugin
     {
-        internal const int ConfigVersion = 130;
+        internal const int ConfigVersion = 132;
         internal static ConfigEntry<int> ConfigFileVersion;
         public static BetterVision Instance;
 
@@ -26,10 +26,14 @@ namespace BetterVision
         internal static ConfigEntry<float> ScopeDepthFade;
 
         internal static ConfigEntry<bool> ScopeUseCustomColor;
-        internal static bool ScopeColorInitialized = false;
         internal static ConfigEntry<float> ScopeMainTexColorCoef;
         internal static ConfigEntry<float> ScopeMinTempValue;
         internal static ConfigEntry<float> ScopeRampShift;
+        internal static bool ScopeColorInitialized = false;
+        internal static float ScopeRead_MainTexColorCoef;
+        internal static float ScopeRead_MinTempValue;
+        internal static float ScopeRead_RampShift;
+        internal static ConfigEntry<bool> ApplyReadColorOnce;
 
         internal static ConfigEntry<bool> T7Fps;
         internal static ConfigEntry<bool> T7Glitch;
@@ -95,7 +99,9 @@ namespace BetterVision
                     new AcceptableValueRange<float>(0.001f, 0.050f)));
 
             ScopeUseCustomColor = Config.Bind("Thermal Optic", "Use Custom Color (?)", false,
-                new ConfigDescription("When enabled, the used thermal scope(s) can only revert after raid. Following values are auto read from first thermal scope used in raid.",
+                new ConfigDescription("Warning:\n These values will cover each thermal scopes modes in raid.\n" +
+                                      "One set of values won't fit different scopes or color modes.\n" +
+                                      "If enabled, can't recover until next raid (also need disabled)",
                     null, new ConfigurationManagerAttributes { IsAdvanced = true }));
             ScopeMainTexColorCoef = Config.Bind("Thermal Optic", "Use MainTexColorCoef - Brightness", 0.5f,
                 new ConfigDescription("", new AcceptableValueRange<float>(0.01f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
@@ -103,6 +109,10 @@ namespace BetterVision
                 new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
             ScopeRampShift = Config.Bind("Thermal Optic", "Use RampShift - ColorShift", -0.5f,
                 new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
+            ApplyReadColorOnce = Config.Bind("Thermal Optic", "Use Recover Default (?)", false,
+                new ConfigDescription("Enable to reset the scope's default values.\n Close menu and use current thermal scope to apply.\n" +
+                                      "This mod only record values of first thermal scope mode used in raid. To recover >1 scopes (modes) you need disable Custom Color and go next raid.",
+                    null, new ConfigurationManagerAttributes { IsAdvanced = true }));
 
             T7Fps = Config.Bind("T7 Thermal", "FPS Limit", false);
             T7Glitch = Config.Bind("T7 Thermal", "Glitch effect", false);
@@ -177,13 +187,20 @@ namespace BetterVision
             {
                 if (!BetterVision.ScopeColorInitialized)
                 {
-                    BetterVision.ScopeMainTexColorCoef.Value = vc.MainTexColorCoef;
-                    BetterVision.ScopeMinTempValue.Value = vc.MinimumTemperatureValue;
-                    BetterVision.ScopeRampShift.Value = vc.RampShift;
+                    BetterVision.ScopeRead_MainTexColorCoef = vc.MainTexColorCoef;
+                    BetterVision.ScopeRead_MinTempValue = vc.MinimumTemperatureValue;
+                    BetterVision.ScopeRead_RampShift = vc.RampShift;
                     BetterVision.ScopeColorInitialized = true;
                 }
                 if (BetterVision.ScopeUseCustomColor.Value)
                 {
+                    if (BetterVision.ApplyReadColorOnce.Value)
+                    {
+                        BetterVision.ScopeMainTexColorCoef.Value = BetterVision.ScopeRead_MainTexColorCoef;
+                        BetterVision.ScopeMinTempValue.Value = BetterVision.ScopeRead_MinTempValue;
+                        BetterVision.ScopeRampShift.Value = BetterVision.ScopeRead_RampShift;
+                        BetterVision.ApplyReadColorOnce.Value = false;
+                    }
                     vc.MainTexColorCoef = BetterVision.ScopeMainTexColorCoef.Value;
                     vc.MinimumTemperatureValue = BetterVision.ScopeMinTempValue.Value;
                     vc.RampShift = BetterVision.ScopeRampShift.Value;
