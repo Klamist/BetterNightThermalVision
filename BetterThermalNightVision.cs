@@ -101,7 +101,7 @@ namespace BetterVision
             ScopeUseCustomColor = Config.Bind("Thermal Optic", "Use Custom Color (?)", false,
                 new ConfigDescription("Warning:\n These values will cover each thermal scopes modes in raid.\n" +
                                       "One set of values won't fit different scopes or color modes.\n" +
-                                      "If enabled, can't recover until next raid (also need disabled)",
+                                      "To recover, refer to Use Recover Default",
                     null, new ConfigurationManagerAttributes { IsAdvanced = true }));
             ScopeMainTexColorCoef = Config.Bind("Thermal Optic", "Use MainTexColorCoef - Brightness", 0.5f,
                 new ConfigDescription("", new AcceptableValueRange<float>(0.01f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
@@ -111,7 +111,7 @@ namespace BetterVision
                 new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
             ApplyReadColorOnce = Config.Bind("Thermal Optic", "Use Recover Default (?)", false,
                 new ConfigDescription("Enable to reset the scope's default values.\n Close menu and use current thermal scope to apply.\n" +
-                                      "This mod only record values of first thermal scope mode used in raid. To recover >1 scopes (modes) you need disable Custom Color and go next raid.",
+                                      "Only cache values of first thermal scope mode used in raid.\n To recover >1 scopes (modes) you need to go next raid and disable Use Custom Color.",
                     null, new ConfigurationManagerAttributes { IsAdvanced = true }));
 
             T7Fps = Config.Bind("T7 Thermal", "FPS Limit", false);
