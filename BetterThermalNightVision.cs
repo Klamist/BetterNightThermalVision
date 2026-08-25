@@ -144,6 +144,11 @@ namespace BetterVision
 
             new Harmony("ciallo.BetterThermalNightVision").PatchAll();
         }
+
+        private void OnDestroy()
+        {
+            OpticThermalInheritance.Reset();
+        }
     }
 
     [HarmonyPatch(typeof(OpticComponentUpdater), "CopyComponentFromOptic")]
@@ -151,6 +156,8 @@ namespace BetterVision
     {
         static void Postfix(OpticComponentUpdater __instance, OpticSight opticSight)
         {
+            OpticThermalInheritance.Register(__instance, opticSight);
+
             var thermalData = opticSight.ScopeData.ThermalVisionData;
             if (thermalData == null || !thermalData.ThermalVision)
                 return;
