@@ -6,14 +6,22 @@ using UnityEngine.Rendering;
 
 namespace BetterVision
 {
-    // Captures heat in the zoom optic, then leaves presentation to the main
-    // thermal camera. No palette or visual-filter preferences are changed here.
+    // Helmet thermal through a magnified optic.
+    // A normal optic runs a full thermal pass from the main camera's current
+    // state. Color Passthrough is the explicit heat-buffer path and skips
+    // palette presentation. Native thermal scopes keep their own pass and
+    // borrow the active T7 utilities.
     internal static class OpticThermalInheritance
     {
         private sealed class Snapshot
         {
             internal bool Enabled;
             internal bool On;
+            internal bool IsFpsStuck;
+            internal bool IsGlitch;
+            internal bool IsMotionBlurred;
+            internal bool IsNoisy;
+            internal bool IsPixelated;
             internal ThermalVisionUtilities Utilities;
             internal float ChromaticAberrationShift;
             internal float UnsharpBias;
@@ -24,6 +32,7 @@ namespace BetterVision
         private static OpticSight _activeOptic;
         private static ThermalVision _inheritedThermal;
         private static Snapshot _snapshot;
+        private static bool _useHeatOnly;
 
         internal static void Register(OpticComponentUpdater updater, OpticSight optic)
         {
@@ -35,6 +44,12 @@ namespace BetterVision
                 Restore();
                 _activeUpdater = updater;
                 _activeOptic = optic;
+            }
+
+            if (BetterVision.T7BlockScope.Value)
+            {
+                Restore();
+                return;
             }
 
             Sync(CameraClass.Exist ? CameraClass.Instance?.ThermalVision : null);
@@ -54,6 +69,12 @@ namespace BetterVision
         {
             if (_activeUpdater == null || _activeOptic == null)
                 return;
+
+            if (BetterVision.T7BlockScope.Value)
+            {
+                Restore();
+                return;
+            }
 
             if (mainThermal == null || !mainThermal.On)
             {
@@ -76,6 +97,11 @@ namespace BetterVision
                 {
                     Enabled = opticThermal.enabled,
                     On = opticThermal.On,
+                    IsFpsStuck = opticThermal.IsFpsStuck,
+                    IsGlitch = opticThermal.IsGlitch,
+                    IsMotionBlurred = opticThermal.IsMotionBlurred,
+                    IsNoisy = opticThermal.IsNoisy,
+                    IsPixelated = opticThermal.IsPixelated,
                     Utilities = opticThermal.ThermalVisionUtilities,
                     ChromaticAberrationShift = opticThermal.ChromaticAberrationThermalShift,
                     UnsharpBias = opticThermal.UnsharpBias,
@@ -83,16 +109,22 @@ namespace BetterVision
                 };
             }
 
-            ScopeThermalVisionData nativeData =
-                _activeOptic.ScopeData?.ThermalVisionData;
-            if (nativeData == null || !nativeData.ThermalVision)
+            ScopeThermalVisionData nativeData = _activeOptic.ScopeData?.ThermalVisionData;
+            if (nativeData != null && nativeData.ThermalVision)
             {
+                // EFT owns the native scope's thermal pass. Only borrow the
+                // active T-7 utilities so its palette is presented once, then
+                // restore the original utilities when inheritance ends.
+                _useHeatOnly = BetterVision.T7ColorPassthrough.Value;
                 opticThermal.ThermalVisionUtilities = mainThermal.ThermalVisionUtilities;
-                opticThermal.ChromaticAberrationThermalShift =
-                    mainThermal.ChromaticAberrationThermalShift;
-                opticThermal.UnsharpBias = mainThermal.UnsharpBias;
-                opticThermal.UnsharpRadiusBlur = mainThermal.UnsharpRadiusBlur;
+                opticThermal.SetMaterialProperties();
+                return;
             }
+
+            // Normal palettes run one complete optic thermal pass. Only the
+            // BD-T7/S-style color-passthrough mode uses the heat-only buffer.
+            _useHeatOnly = BetterVision.T7ColorPassthrough.Value;
+            ApplyMainCameraSettings(opticThermal, mainThermal);
 
             opticThermal.On = true;
             opticThermal.enabled = true;
@@ -101,14 +133,70 @@ namespace BetterVision
 
         internal static bool IsHeatOnlyActive(ThermalVision thermal)
         {
-            return thermal != null && thermal == _inheritedThermal && _snapshot != null;
+            if (thermal != null
+                && ThermalReticleExposure.PresentationReady
+                && BetterVision.T7ColorPassthrough.Value
+                && ThermalReticleExposure.IsFpsCamera(thermal))
+            {
+                return true;
+            }
+
+            return thermal != null
+                && !BetterVision.T7BlockScope.Value
+                && _useHeatOnly
+                && thermal == _inheritedThermal
+                && _snapshot != null;
+        }
+
+        internal static void SetScopeProcessingEnabled(bool enabled)
+        {
+            if (!enabled)
+            {
+                Restore();
+                return;
+            }
+
+            Sync(CameraClass.Exist ? CameraClass.Instance?.ThermalVision : null);
         }
 
         internal static void Reset()
         {
+            ClearRegistration();
+            OpticHeatOnlyPipeline.ForgetAll();
+        }
+
+        internal static void OnThermalDestroyed(ThermalVision thermal)
+        {
+            if (ReferenceEquals(_inheritedThermal, thermal))
+            {
+                _inheritedThermal = null;
+                _snapshot = null;
+                _useHeatOnly = false;
+                _activeUpdater = null;
+                _activeOptic = null;
+            }
+
+            OpticHeatOnlyPipeline.Forget(thermal);
+        }
+
+        private static void ClearRegistration()
+        {
             Restore();
             _activeUpdater = null;
             _activeOptic = null;
+        }
+
+        private static void ApplyMainCameraSettings(ThermalVision opticThermal, ThermalVision mainThermal)
+        {
+            opticThermal.ThermalVisionUtilities = mainThermal.ThermalVisionUtilities;
+            opticThermal.ChromaticAberrationThermalShift = mainThermal.ChromaticAberrationThermalShift;
+            opticThermal.UnsharpBias = mainThermal.UnsharpBias;
+            opticThermal.UnsharpRadiusBlur = mainThermal.UnsharpRadiusBlur;
+            opticThermal.IsFpsStuck = mainThermal.IsFpsStuck;
+            opticThermal.IsGlitch = mainThermal.IsGlitch;
+            opticThermal.IsMotionBlurred = mainThermal.IsMotionBlurred;
+            opticThermal.IsNoisy = mainThermal.IsNoisy;
+            opticThermal.IsPixelated = mainThermal.IsPixelated;
         }
 
         private static void Restore()
@@ -117,10 +205,16 @@ namespace BetterVision
             {
                 _inheritedThermal = null;
                 _snapshot = null;
+                _useHeatOnly = false;
                 return;
             }
 
             _inheritedThermal.On = _snapshot.On;
+            _inheritedThermal.IsFpsStuck = _snapshot.IsFpsStuck;
+            _inheritedThermal.IsGlitch = _snapshot.IsGlitch;
+            _inheritedThermal.IsMotionBlurred = _snapshot.IsMotionBlurred;
+            _inheritedThermal.IsNoisy = _snapshot.IsNoisy;
+            _inheritedThermal.IsPixelated = _snapshot.IsPixelated;
             _inheritedThermal.ThermalVisionUtilities = _snapshot.Utilities;
             _inheritedThermal.ChromaticAberrationThermalShift = _snapshot.ChromaticAberrationShift;
             _inheritedThermal.UnsharpBias = _snapshot.UnsharpBias;
@@ -128,10 +222,12 @@ namespace BetterVision
             if (_snapshot.Utilities != null)
                 _inheritedThermal.SetMaterialProperties();
 
+            bool restoreThermalPipeline = _snapshot.Enabled && _snapshot.On;
             _inheritedThermal.enabled = _snapshot.Enabled;
-            OpticHeatOnlyPipeline.Release(_inheritedThermal);
+            OpticHeatOnlyPipeline.Restore(_inheritedThermal, restoreThermalPipeline);
             _inheritedThermal = null;
             _snapshot = null;
+            _useHeatOnly = false;
         }
     }
 
@@ -174,11 +270,33 @@ namespace BetterVision
             _gBuffer?.Clear();
         }
 
-        internal static void Release(ThermalVision thermal)
+        internal static void Restore(ThermalVision thermal, bool thermalOn)
         {
-            if (thermal != _cachedThermal)
+            if (thermal == null)
                 return;
 
+            Material material = thermalOn
+                ? MaterialField.GetValue(thermal) as Material
+                : null;
+            SSAA ssaa = SsaaField.GetValue(thermal) as SSAA;
+            MBOIT_Scattering scattering = ScatteringField.GetValue(thermal) as MBOIT_Scattering;
+            ssaa?.SetThermalVisionOn(thermalOn, material);
+            if (scattering != null)
+                scattering.ThermalVisionIsEnabled = thermalOn;
+
+            Forget(thermal);
+        }
+
+        internal static void Forget(ThermalVision thermal)
+        {
+            if (!ReferenceEquals(thermal, _cachedThermal))
+                return;
+
+            ForgetAll();
+        }
+
+        internal static void ForgetAll()
+        {
             _cachedThermal = null;
             _mainBuffer = null;
             _gBuffer = null;
@@ -220,21 +338,6 @@ namespace BetterVision
 
             OpticHeatOnlyPipeline.Finish();
             return false;
-        }
-    }
-
-    [HarmonyPatch]
-    internal static class FpsThermalStatePatch
-    {
-        private static MethodBase TargetMethod()
-        {
-            return AccessTools.Method(typeof(ThermalVision), "method_1", new[] { typeof(bool) });
-        }
-
-        private static void Postfix(ThermalVision __instance)
-        {
-            if (CameraClass.Exist && __instance == CameraClass.Instance?.ThermalVision)
-                OpticThermalInheritance.Sync(__instance);
         }
     }
 

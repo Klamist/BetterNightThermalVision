@@ -37,18 +37,16 @@
             T7Pixel = Config.Bind("T7 热成像", "像素化", false);
             T7Blur = Config.Bind("T7 热成像", "模糊化", false);
             T7BlockScope = Config.Bind("T7 热成像", "禁用光学瞄具 (?)", false,
-                new ConfigDescription("开启后只能在战局外关闭。非单倍镜不具备热成像效果"));
+                new ConfigDescription("普通光学镜片保持不透明，且不与头盔热成像叠加。原生热成像瞄具仍使用“热成像瞄具”设置。可在局内开关。"));
+            T7BlockGlass = Config.Bind("T7 热成像", "禁用环境玻璃", false,
+                new ConfigDescription("环境玻璃在热成像下保持不透明。不影响瞄具和准星材质。"));
             T7DepthFade = Config.Bind("T7 热成像", "远景衰减 (?)", 0.01f,
                 new ConfigDescription("数值越低，远距离越清晰。T7 默认值为 0.03",
                     new AcceptableValueRange<float>(0.001f, 0.050f)));
 
-            T7RedHot = Config.Bind("T7 热成像", "白底红热模式", false);
-            Adv_MainTexColorCoef = Config.Bind("T7 热成像", "白底红热 MainTexColorCoef - 亮度", 0.7f,
-                new ConfigDescription("", new AcceptableValueRange<float>(0.01f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
-            Adv_MinimumTemperatureValue = Config.Bind("T7 热成像", "白底红热 MinTempValue - 色差", 0.1f,
-                new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
-            Adv_RampShift = Config.Bind("T7 热成像", "白底红热 RampShift - 色偏移", -0.45f,
-                new ConfigDescription("", new AcceptableValueRange<float>(-1f, 1f), new ConfigurationManagerAttributes { IsAdvanced = true }));
+            T7Palette = Config.Bind("T7 热成像", "热成像调色", "White-hot");
+            T7ColorPassthrough = Config.Bind("T7 热成像", "彩色直通", false,
+                new ConfigDescription("使用 BD-T7/S 风格的带热信息彩色缓冲。开启时跳过调色呈现。"));
 
             NVNoise = Config.Bind("夜视仪", "噪点", false);
             NVScopeDefault = Config.Bind("夜视仪", "使用默认倍镜内亮度 (?)", false,
