@@ -52,7 +52,7 @@ namespace BetterVision
                 return;
             }
 
-            Sync(CameraClass.Exist ? CameraClass.Instance?.ThermalVision : null);
+            Sync(CameraManager.Exist ? CameraManager.Instance?.ThermalVision : null);
         }
 
         internal static void Unregister(OpticComponentUpdater updater)
@@ -83,7 +83,7 @@ namespace BetterVision
             }
 
             ThermalVision opticThermal = Traverse.Create(_activeUpdater)
-                .Field("thermalVision_0")
+                .Field("thermalVision")
                 .GetValue<ThermalVision>();
 
             if (opticThermal == null)
@@ -156,7 +156,7 @@ namespace BetterVision
                 return;
             }
 
-            Sync(CameraClass.Exist ? CameraClass.Instance?.ThermalVision : null);
+            Sync(CameraManager.Exist ? CameraManager.Instance?.ThermalVision : null);
         }
 
         internal static void Reset()
@@ -234,10 +234,10 @@ namespace BetterVision
     internal static class OpticHeatOnlyPipeline
     {
         private static readonly int ThermalVisionOnId = Shader.PropertyToID("_ThermalVisionOn");
-        private static readonly FieldInfo MainBufferField = AccessTools.Field(typeof(ThermalVision), "commandBuffer_0");
-        private static readonly FieldInfo GBufferField = AccessTools.Field(typeof(ThermalVision), "commandBuffer_1");
-        private static readonly FieldInfo MaterialField = AccessTools.Field(typeof(ThermalVision), "material_0");
-        private static readonly FieldInfo SsaaField = AccessTools.Field(typeof(ThermalVision), "ssaa_0");
+        private static readonly FieldInfo MainBufferField = AccessTools.Field(typeof(ThermalVision), "_thermalVisionCB");
+        private static readonly FieldInfo GBufferField = AccessTools.Field(typeof(ThermalVision), "_copyGBufferCB");
+        private static readonly FieldInfo MaterialField = AccessTools.Field(typeof(ThermalVision), "_material");
+        private static readonly FieldInfo SsaaField = AccessTools.Field(typeof(ThermalVision), "_ssaa");
         private static readonly FieldInfo ScatteringField = AccessTools.Field(typeof(ThermalVision), "mboit_Scattering_0");
 
         private static ThermalVision _cachedThermal;
@@ -346,7 +346,7 @@ namespace BetterVision
     {
         private static MethodBase TargetMethod()
         {
-            return AccessTools.Method(AccessTools.TypeByName("GClass3687"), "method_3", new[] { typeof(OpticSight) });
+            return AccessTools.Method(AccessTools.TypeByName("OpticCameraManager"), "OnOpticSightDisabled", new[] { typeof(OpticSight) });
         }
 
         private static void Prefix(object __instance, OpticSight opticSight, out bool __state)
@@ -370,7 +370,7 @@ namespace BetterVision
     {
         private static MethodBase TargetMethod()
         {
-            return AccessTools.Method(AccessTools.TypeByName("GClass3687"), "Dispose");
+            return AccessTools.Method(AccessTools.TypeByName("OpticCameraManager"), "Dispose");
         }
 
         private static void Prefix(object __instance)

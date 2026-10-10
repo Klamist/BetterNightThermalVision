@@ -27,7 +27,7 @@ namespace BetterVision
         internal ConfigEntry<float> RampShift;
     }
 
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "2.0.0")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "2.1.0")]
     public class BetterVision : BaseUnityPlugin
     {
         internal const int ConfigVersion = 134;
@@ -452,10 +452,10 @@ namespace BetterVision
 
         private static void ApplyT7Color()
         {
-            if (!CameraClass.Exist)
+            if (!CameraManager.Exist)
                 return;
 
-            ThermalVision thermal = CameraClass.Instance?.ThermalVision;
+            ThermalVision thermal = CameraManager.Instance?.ThermalVision;
             T7Color.Apply(thermal);
             thermal?.SetMaterialProperties();
             OpticThermalInheritance.Sync(thermal);
@@ -463,9 +463,9 @@ namespace BetterVision
 
         private static void OnT7ClaritySettingChanged(object sender, System.EventArgs args)
         {
-            if (CameraClass.Exist)
+            if (CameraManager.Exist)
             {
-                ThermalVision thermal = CameraClass.Instance?.ThermalVision;
+                ThermalVision thermal = CameraManager.Instance?.ThermalVision;
                 ApplyT7Clarity(thermal);
                 OpticThermalInheritance.Sync(thermal);
             }
@@ -478,7 +478,7 @@ namespace BetterVision
 
         private static void OnNVNoiseSettingChanged(object sender, System.EventArgs args)
         {
-            ApplyNVNoise(CameraClass.Exist ? CameraClass.Instance?.NightVision : null, false);
+            ApplyNVNoise(CameraManager.Exist ? CameraManager.Instance?.NightVision : null, false);
         }
 
         private static void OnNVScopeSettingChanged(object sender, System.EventArgs args)
@@ -493,10 +493,10 @@ namespace BetterVision
 
         private static void OnT7PassthroughSettingChanged(object sender, System.EventArgs args)
         {
-            if (!CameraClass.Exist)
+            if (!CameraManager.Exist)
                 return;
 
-            ThermalVision thermal = CameraClass.Instance?.ThermalVision;
+            ThermalVision thermal = CameraManager.Instance?.ThermalVision;
             T7Color.Apply(thermal);
             ApplyT7Clarity(thermal);
             OpticThermalInheritance.Sync(thermal);
@@ -548,14 +548,14 @@ namespace BetterVision
 
         internal static void ApplyMaskSetting()
         {
-            if (!CameraClass.Exist)
+            if (!CameraManager.Exist)
                 return;
 
-            ThermalVision thermal = CameraClass.Instance?.ThermalVision;
+            ThermalVision thermal = CameraManager.Instance?.ThermalVision;
             if (thermal != null && thermal.TextureMask != null)
                 thermal.TextureMask.TryToEnable(thermal, thermal.On && NVT7Mask.Value);
 
-            NightVision nightVision = CameraClass.Instance?.NightVision;
+            NightVision nightVision = CameraManager.Instance?.NightVision;
             if (nightVision != null && nightVision.TextureMask != null)
                 nightVision.TextureMask.TryToEnable(nightVision, nightVision.On && NVT7Mask.Value);
         }
@@ -564,9 +564,9 @@ namespace BetterVision
         {
             if (nightVision == null)
                 return false;
-            if (CameraClass.Exist && object.ReferenceEquals(
+            if (CameraManager.Exist && object.ReferenceEquals(
                     nightVision,
-                    CameraClass.Instance?.NightVision))
+                    CameraManager.Instance?.NightVision))
             {
                 return true;
             }
@@ -577,14 +577,14 @@ namespace BetterVision
 
         internal static void RestoreNativeMasks()
         {
-            if (!CameraClass.Exist)
+            if (!CameraManager.Exist)
                 return;
 
-            ThermalVision thermal = CameraClass.Instance?.ThermalVision;
+            ThermalVision thermal = CameraManager.Instance?.ThermalVision;
             if (thermal != null && thermal.TextureMask != null)
                 thermal.TextureMask.TryToEnable(thermal, thermal.On);
 
-            NightVision nightVision = CameraClass.Instance?.NightVision;
+            NightVision nightVision = CameraManager.Instance?.NightVision;
             if (nightVision != null && nightVision.TextureMask != null)
                 nightVision.TextureMask.TryToEnable(nightVision, nightVision.On);
         }
@@ -866,8 +866,8 @@ namespace BetterVision
                 snapshot.Camera.farClipPlane = BetterVision.ScopeMaxDistance.Value;
 
             snapshot.Thermal.SetMaterialProperties();
-            if (syncInheritance && CameraClass.Exist)
-                OpticThermalInheritance.Sync(CameraClass.Instance?.ThermalVision);
+            if (syncInheritance && CameraManager.Exist)
+                OpticThermalInheritance.Sync(CameraManager.Instance?.ThermalVision);
         }
 
         private static void RestoreUtilities(Snapshot snapshot)
@@ -959,7 +959,7 @@ namespace BetterVision
     {
         static void Postfix()
         {
-            ThermalVision tv = CameraClass.Instance.ThermalVision;
+            ThermalVision tv = CameraManager.Instance.ThermalVision;
             if (tv == null)
                 return;
 
@@ -973,7 +973,7 @@ namespace BetterVision
     {
         static void Postfix(PlayerCameraController __instance)
         {
-            NightVision nv = CameraClass.Instance.NightVision;
+            NightVision nv = CameraManager.Instance.NightVision;
             if (nv == null || !nv.enabled)
                 return;
 
@@ -1021,7 +1021,7 @@ namespace BetterVision
     {
         private static System.Reflection.MethodBase TargetMethod()
         {
-            return AccessTools.Method(typeof(NightVision), "method_1", new[] { typeof(bool) });
+            return AccessTools.Method(typeof(NightVision), "Switch", new[] { typeof(bool) });
         }
 
         private static void Postfix()

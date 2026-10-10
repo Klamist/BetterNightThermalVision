@@ -60,7 +60,7 @@ namespace BetterVision
             if (thermal == null || thermal.gameObject == null || !thermal.gameObject.activeInHierarchy)
                 return false;
 
-            ThermalVision mainThermal = CameraClass.Exist ? CameraClass.Instance?.ThermalVision : null;
+            ThermalVision mainThermal = CameraManager.Exist ? CameraManager.Instance?.ThermalVision : null;
             if (mainThermal != null)
                 return ReferenceEquals(thermal, mainThermal);
 
@@ -135,8 +135,8 @@ namespace BetterVision
         internal static void OnThermalDestroyed(ThermalVision thermal)
         {
             bool isMainThermal = thermal != null
-                && ((CameraClass.Exist
-                        && ReferenceEquals(thermal, CameraClass.Instance?.ThermalVision))
+                && ((CameraManager.Exist
+                        && ReferenceEquals(thermal, CameraManager.Instance?.ThermalVision))
                     || (thermal.gameObject != null
                         && string.Equals(
                             thermal.gameObject.name,
@@ -233,8 +233,7 @@ namespace BetterVision
     {
         private const string WorldGlassShaderName = "Global Fog/Transparent Reflective Specular";
         private const string SecondaryWorldGlassShaderName = "p0/Reflective/Bumped Specular";
-        private const string TransparentCutoffShaderName =
-            "p0/Reflective/Bumped Specular SMap Transparent Cutoff";
+        private const string TransparentCutoffShaderName = "p0/Reflective/Bumped Specular SMap Transparent Cutoff";
         private const string EmaFenceMaterialName = "fence_ema_01_blue";
         private const string OpticSightShaderName = "CW FX/OpticSight";
         private const string OpticGlassShaderName = "Custom/OpticGlass";
@@ -540,7 +539,7 @@ namespace BetterVision
                 return;
             }
 
-            Camera camera = CameraClass.Exist ? CameraClass.Instance?.Camera : null;
+            Camera camera = CameraManager.Exist ? CameraManager.Instance?.Camera : null;
             if (camera == null)
             {
                 Reset();
@@ -733,7 +732,7 @@ namespace BetterVision
     {
         private static MethodBase TargetMethod()
         {
-            return AccessTools.Method(typeof(ThermalVision), "method_1", new[] { typeof(bool) });
+            return AccessTools.Method(typeof(ThermalVision), "Switch", new[] { typeof(bool) });
         }
 
         private static void Postfix(ThermalVision __instance, bool __0)
