@@ -11,15 +11,18 @@ namespace BetterVision
         private static int _rtId = Shader.PropertyToID("_NVScopeBrightRT");
 
         private static Material _nvMat;
+        private static Material _sourceMat;
         private static Camera _opticCam;
+        private static GClass3687 _manager;
 
         public static void Init(OpticCameraManager manager)
         {
             if (manager == null || manager.Camera == null)
                 return;
+
             _opticCam = manager.Camera;
+            _manager = manager;
             _cb = new CommandBuffer { name = "NVScopeBright_CommandBuffer" };
-            _opticCam.RemoveCommandBuffer(CameraEvent.BeforeImageEffects, _cb);
             _opticCam.AddCommandBuffer(CameraEvent.BeforeImageEffects, _cb);
         }
 
@@ -33,12 +36,27 @@ namespace BetterVision
             if (BetterVision.NVScopeDefault.Value)
                 return;
 
-            var mainNV = CameraManager.Instance.NightVision;
-            if (mainNV == null || !mainNV.On)
+            if (!CameraClass.Exist)
                 return;
 
-            if (_nvMat == null || mainNV.Material != _nvMat)
-                _nvMat = new Material(mainNV.Material);
+            var scopeData = _manager?.CurrentOpticSight?.ScopeData;
+            if ((scopeData?.NightVisionData != null && scopeData.NightVisionData.NightVision)
+                || (scopeData?.ThermalVisionData != null && scopeData.ThermalVisionData.ThermalVision))
+            {
+                return;
+            }
+
+            var mainNV = CameraClass.Instance.NightVision;
+            if (mainNV == null || !mainNV.On || mainNV.Material_0 == null)
+                return;
+
+            if (_nvMat == null || mainNV.Material_0 != _sourceMat)
+            {
+                if (_nvMat != null)
+                    Object.Destroy(_nvMat);
+                _sourceMat = mainNV.Material_0;
+                _nvMat = new Material(mainNV.Material_0);
+            }
 
             float boost = BetterVision.NVScopeBrightness.Value;
             float baseIntensity = mainNV.Intensity;
@@ -52,25 +70,63 @@ namespace BetterVision
 
             _cb.ReleaseTemporaryRT(_rtId);
         }
+
+        public static void Clear()
+        {
+            _cb?.Clear();
+        }
+
+        public static void Reset()
+        {
+            if (_opticCam != null && _cb != null)
+                _opticCam.RemoveCommandBuffer(CameraEvent.BeforeImageEffects, _cb);
+            _cb?.Release();
+            _cb = null;
+            _opticCam = null;
+            _manager = null;
+
+            if (_nvMat != null)
+                Object.Destroy(_nvMat);
+            _nvMat = null;
+            _sourceMat = null;
+        }
     }
 
     // Patch：倍镜相机初始化
-    [HarmonyPatch(typeof(OpticCameraManager), "Init")]
+    [HarmonyPatch(typeof(GClass3687), "Init")]
     public class Patch_NVScopeBright_Init
     {
-        static void Postfix(OpticCameraManager __instance)
+        static void Prefix()
+        {
+            NVScopeBright.Reset();
+            ThermalOpticSettings.Reset();
+            BetterVision.ResetScopeColorCache();
+        }
+
+        static void Postfix(GClass3687 __instance)
         {
             NVScopeBright.Init(__instance);
         }
     }
 
     // Patch：启用倍镜时重建 CommandBuffer
-    [HarmonyPatch(typeof(OpticCameraManager), "OnOpticSightEnabled")]
+    [HarmonyPatch(typeof(GClass3687), "method_2")]
     public class Patch_NVScopeBright_OnOpticEnabled
     {
         static void Postfix()
         {
             NVScopeBright.Rebuild();
+        }
+    }
+
+    [HarmonyPatch(typeof(GClass3687), "Dispose")]
+    public class Patch_NVScopeBright_Dispose
+    {
+        static void Prefix()
+        {
+            NVScopeBright.Reset();
+            ThermalOpticSettings.Reset();
+            BetterVision.ResetScopeColorCache();
         }
     }
 }
