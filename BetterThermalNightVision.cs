@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace BetterVision
 {
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "2.0.0")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.4.0")]
     public class BetterVision : BaseUnityPlugin
     {
         internal const int ConfigVersion = 132;
