@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace BetterVision
 {
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.3.2")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "2.0.0")]
     public class BetterVision : BaseUnityPlugin
     {
         internal const int ConfigVersion = 132;
@@ -144,6 +144,11 @@ namespace BetterVision
 
             new Harmony("ciallo.BetterThermalNightVision").PatchAll();
         }
+
+        //private void OnDestroy()
+        //{
+        //    OpticThermalInheritance.Reset();
+        //}
     }
 
     [HarmonyPatch(typeof(OpticComponentUpdater), "CopyComponentFromOptic")]
@@ -220,7 +225,7 @@ namespace BetterVision
     {
         static void Postfix()
         {
-            ThermalVision tv = CameraClass.Instance.ThermalVision;
+            ThermalVision tv = CameraManager.Instance.ThermalVision;
             if (tv == null)
                 return;
 
@@ -247,7 +252,7 @@ namespace BetterVision
             if (BetterVision.NVNoise.Value)
                 return;
 
-            NightVision nv = CameraClass.Instance.NightVision;
+            NightVision nv = CameraManager.Instance.NightVision;
             if (nv == null)
                 return;
 

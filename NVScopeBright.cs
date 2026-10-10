@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using EFT.CameraControl;
+using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -12,7 +13,7 @@ namespace BetterVision
         private static Material _nvMat;
         private static Camera _opticCam;
 
-        public static void Init(GClass3687 manager)
+        public static void Init(OpticCameraManager manager)
         {
             if (manager == null || manager.Camera == null)
                 return;
@@ -32,12 +33,12 @@ namespace BetterVision
             if (BetterVision.NVScopeDefault.Value)
                 return;
 
-            var mainNV = CameraClass.Instance.NightVision;
+            var mainNV = CameraManager.Instance.NightVision;
             if (mainNV == null || !mainNV.On)
                 return;
 
-            if (_nvMat == null || mainNV.Material_0 != _nvMat)
-                _nvMat = new Material(mainNV.Material_0);
+            if (_nvMat == null || mainNV.Material != _nvMat)
+                _nvMat = new Material(mainNV.Material);
 
             float boost = BetterVision.NVScopeBrightness.Value;
             float baseIntensity = mainNV.Intensity;
@@ -54,17 +55,17 @@ namespace BetterVision
     }
 
     // Patch：倍镜相机初始化
-    [HarmonyPatch(typeof(GClass3687), "Init")]
+    [HarmonyPatch(typeof(OpticCameraManager), "Init")]
     public class Patch_NVScopeBright_Init
     {
-        static void Postfix(GClass3687 __instance)
+        static void Postfix(OpticCameraManager __instance)
         {
             NVScopeBright.Init(__instance);
         }
     }
 
     // Patch：启用倍镜时重建 CommandBuffer
-    [HarmonyPatch(typeof(GClass3687), "method_2")]
+    [HarmonyPatch(typeof(OpticCameraManager), "OnOpticSightEnabled")]
     public class Patch_NVScopeBright_OnOpticEnabled
     {
         static void Postfix()
