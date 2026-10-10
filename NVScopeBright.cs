@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using EFT.CameraControl;
+using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -14,7 +15,7 @@ namespace BetterVision
         private static Camera _opticCam;
         private static GClass3687 _manager;
 
-        public static void Init(GClass3687 manager)
+        public static void Init(OpticCameraManager manager)
         {
             if (manager == null || manager.Camera == null)
                 return;
