@@ -1,5 +1,5 @@
-﻿using HarmonyLib;
-using EFT.CameraControl;
+﻿using EFT.CameraControl;
+using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -11,9 +11,12 @@ namespace BetterVision
         private static int _rtId = Shader.PropertyToID("_NVScopeBrightRT");
 
         private static Material _nvMat;
-        private static Material _sourceMat;
         private static Camera _opticCam;
         private static OpticCameraManager _manager;
+
+        private static bool _lastNVOn;
+        private static bool _pendingRebuild;
+        private static float _rebuildAtTime = -1f;
 
         public static void Init(OpticCameraManager manager)
         {
@@ -23,6 +26,33 @@ namespace BetterVision
             _manager = manager;
             _cb = new CommandBuffer { name = "NVScopeBright_CommandBuffer" };
             _opticCam.AddCommandBuffer(CameraEvent.BeforeImageEffects, _cb);
+        }
+
+        public static void NotifyPreCullDone(bool nvOn)
+        {
+            if (nvOn != _lastNVOn)
+            {
+                _lastNVOn = nvOn;
+                if (nvOn)
+                {
+                    _pendingRebuild = true;
+                    _rebuildAtTime = Time.unscaledTime + 0.1f;
+                }
+                else
+                    Rebuild();
+            }
+
+            if (_pendingRebuild && Time.unscaledTime >= _rebuildAtTime)
+            {
+                _pendingRebuild = false;
+                Rebuild();
+            }
+        }
+
+        public static void ScheduleRebuild(float delaySeconds = 0.1f)
+        {
+            _pendingRebuild = true;
+            _rebuildAtTime = Time.unscaledTime + delaySeconds;
         }
 
         public static void Rebuild()
@@ -49,11 +79,10 @@ namespace BetterVision
             if (mainNV == null || !mainNV.On || mainNV.Material == null)
                 return;
 
-            if (_nvMat == null || mainNV.Material != _sourceMat)
+            if (_nvMat == null || mainNV.Material != _nvMat)
             {
                 if (_nvMat != null)
                     Object.Destroy(_nvMat);
-                _sourceMat = mainNV.Material;
                 _nvMat = new Material(mainNV.Material);
             }
 
@@ -87,7 +116,10 @@ namespace BetterVision
             if (_nvMat != null)
                 Object.Destroy(_nvMat);
             _nvMat = null;
-            _sourceMat = null;
+
+            _lastNVOn = false;
+            _pendingRebuild = false;
+            _rebuildAtTime = -1f;
         }
     }
 

@@ -27,7 +27,7 @@ namespace BetterVision
         internal ConfigEntry<float> RampShift;
     }
 
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "2.1.0")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "2.1.1")]
     public class BetterVision : BaseUnityPlugin
     {
         internal const int ConfigVersion = 134;
@@ -1014,6 +1014,13 @@ namespace BetterVision
                     __instance.On && BetterVision.NVT7Mask.Value);
             }
         }
+        static void Postfix(NightVision __instance)
+        {
+            if (!BetterVision.IsMainNightVision(__instance))
+                return;
+
+            NVScopeBright.NotifyPreCullDone(__instance.On);
+        }
     }
 
     [HarmonyPatch]
@@ -1027,7 +1034,7 @@ namespace BetterVision
         private static void Postfix()
         {
             BetterVision.ApplyMaskSetting();
-            NVScopeBright.Rebuild();
+            //NVScopeBright.Rebuild();
         }
     }
 
