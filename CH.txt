@@ -1,5 +1,12 @@
 热成像瞄具 T7 夜视仪 优化
 
+        internal const string WhiteHot = "白热";
+        internal const string BlackHot = "黑热";
+        internal const string RedHot = "红热";
+        internal const string Ironbow = "深彩";
+        internal const string Fusion = "混彩";
+        internal const string Rainbow = "彩虹";
+
             ScopeFps = Config.Bind("热成像瞄具", "帧率限制", false);
             ScopeGlitch = Config.Bind("热成像瞄具", "扫描线", false);
             ScopeMotion = Config.Bind("热成像瞄具", "动态模糊", false);
@@ -37,16 +44,49 @@
             T7Pixel = Config.Bind("T7 热成像", "像素化", false);
             T7Blur = Config.Bind("T7 热成像", "模糊化", false);
             T7BlockScope = Config.Bind("T7 热成像", "禁用光学瞄具 (?)", false,
-                new ConfigDescription("普通光学镜片保持不透明，且不与头盔热成像叠加。原生热成像瞄具仍使用“热成像瞄具”设置。可在局内开关。"));
-            T7BlockGlass = Config.Bind("T7 热成像", "禁用环境玻璃", false,
+                new ConfigDescription("普通光学镜片保持不透明，且不与头盔热成像叠加。" +
+                    "原生热成像瞄具仍使用“热成像瞄具”设置。"));
+            T7BlockGlass = Config.Bind("T7 热成像", "环境玻璃遮挡", false,
                 new ConfigDescription("环境玻璃在热成像下保持不透明。不影响瞄具和准星材质。"));
             T7DepthFade = Config.Bind("T7 热成像", "远景衰减 (?)", 0.01f,
                 new ConfigDescription("数值越低，远距离越清晰。T7 默认值为 0.03",
                     new AcceptableValueRange<float>(0.001f, 0.050f)));
+            T7Palette = Config.Bind(
+                "T7 热成像",
+                "温度变色模板",
+                ThermalPaletteMode.WhiteHot,
+                new ConfigDescription("",
+                    new AcceptableValueList<string>(
+                        ThermalPaletteMode.WhiteHot,
+                        ThermalPaletteMode.BlackHot,
+                        ThermalPaletteMode.RedHot,
+                        ThermalPaletteMode.Ironbow,
+                        ThermalPaletteMode.Fusion,
+                        ThermalPaletteMode.Rainbow),
+                    new ConfigurationManagerAttributes { Order = 10 }));
+            T7ColorPassthrough = Config.Bind(
+                "T7 热成像",
+                "真彩色 (?)",
+                false,
+                new ConfigDescription(
+                    "使用 BD-T7/S-style 全彩背景，拥有特殊温度变色模式"));
 
-            T7Palette = Config.Bind("T7 热成像", "热成像调色", "White-hot");
-            T7ColorPassthrough = Config.Bind("T7 热成像", "彩色直通", false,
-                new ConfigDescription("使用 BD-T7/S 风格的带热信息彩色缓冲。开启时跳过调色呈现。"));
+            Config.Bind(
+                "T7 热成像",
+                "颜色模板修改 (?)",
+                false,
+                new ConfigDescription(
+                    "调节并即时预览温度颜色效果。\n" +
+                    "每个颜色模板修改后需保存，否则切换后重置",
+                    null,
+                    new ConfigurationManagerAttributes
+                    {
+                        CustomDrawer = DrawPaletteTuning,
+                        HideDefaultButton = true,
+                        HideSettingName = false,
+                        IsAdvanced = true,
+                        Order = 9
+                    }));
 
             NVNoise = Config.Bind("夜视仪", "噪点", false);
             NVScopeDefault = Config.Bind("夜视仪", "使用默认倍镜内亮度 (?)", false,

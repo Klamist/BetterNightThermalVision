@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using EFT.CameraControl;
 using HarmonyLib;
 using UnityEngine;

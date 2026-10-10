@@ -27,10 +27,7 @@ namespace BetterVision
         internal ConfigEntry<float> RampShift;
     }
 
-    // Built against SPT 4.0.13 (EFT 0.16.9.40087).
-    // Still needs a port to SPT 4.1: GClass3687, ThermalVision.method_1,
-    // and the ThermalVision command-buffer fields belong to this client.
-    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "1.3.4")]
+    [BepInPlugin("ciallo.BetterThermalNightVision", "Better Thermal & Night Vision", "2.0.0")]
     public class BetterVision : BaseUnityPlugin
     {
         internal const int ConfigVersion = 134;
@@ -112,7 +109,7 @@ namespace BetterVision
                 var temp = new ConfigFile(configPath, true);
                 oldVersion = temp.Bind("Internal", "ConfigVersion", 0).Value;
             }
-            if (oldVersion > 0 && oldVersion < 132)
+            if (oldVersion > 0 && oldVersion != ConfigVersion)
                 File.Delete(configPath);
             ConfigFileVersion = Config.Bind("Internal", "ConfigVersion", ConfigVersion,
                 new ConfigDescription("", null, new ConfigurationManagerAttributes { Browsable = false }));
@@ -122,13 +119,6 @@ namespace BetterVision
                 pluginDir,
                 "RedhotRamp.png",
                 "BetterThermal Red-hot Ramp");
-            if (T7Color.RedHotRampTexture == null)
-            {
-                T7Color.RedHotRampTexture = LoadRampTexture(
-                    pluginDir,
-                    "ColorRamp.png",
-                    "BetterThermal Red-hot Ramp");
-            }
             T7Color.IronbowRampTexture = LoadRampTexture(
                 pluginDir,
                 "IronbowRamp.png",
@@ -163,6 +153,67 @@ namespace BetterVision
                 new ConfigDescription("Enable to reset the scope's default values.\n Close menu and use current thermal scope to apply.\n" +
                                       "Only cache values of first thermal scope mode used in raid.\n To recover >1 scopes (modes) you need to go next raid and disable Use Custom Color.",
                     null, new ConfigurationManagerAttributes { IsAdvanced = true }));
+
+            T7Fps = Config.Bind("T7 Thermal", "FPS Limit", false);
+            T7Glitch = Config.Bind("T7 Thermal", "Glitch effect", false);
+            T7Motion = Config.Bind("T7 Thermal", "Motion Blur", false);
+            T7Noise = Config.Bind("T7 Thermal", "Noise", false);
+            T7Pixel = Config.Bind("T7 Thermal", "Pixelation", false);
+            T7Blur = Config.Bind("T7 Thermal", "Blur", false);
+            T7BlockScope = Config.Bind("T7 Thermal", "Block Optic Scope (?)", false,
+                new ConfigDescription("Keep ordinary optic glass opaque and incompatible with helmet thermal. " +
+                    "Native thermal scopes still use the Thermal Optic settings."));
+            T7BlockGlass = Config.Bind("T7 Thermal", "Block Glass (?)", false,
+                new ConfigDescription("Keep environmental glass thermally opaque. This does not block optic or collimator materials."));
+            T7DepthFade = Config.Bind("T7 Thermal", "Depth Fade (?)", 0.01f,
+                new ConfigDescription("Lower is more visible on far distance. T7 Default is 0.03",
+                    new AcceptableValueRange<float>(0.001f, 0.050f)));
+            T7Palette = Config.Bind(
+                "T7 Thermal",
+                "Thermal Palette",
+                ThermalPaletteMode.WhiteHot,
+                new ConfigDescription("",
+                    new AcceptableValueList<string>(
+                        ThermalPaletteMode.WhiteHot,
+                        ThermalPaletteMode.BlackHot,
+                        ThermalPaletteMode.RedHot,
+                        ThermalPaletteMode.Ironbow,
+                        ThermalPaletteMode.Fusion,
+                        ThermalPaletteMode.Rainbow),
+                    new ConfigurationManagerAttributes { Order = 10 }));
+            T7ColorPassthrough = Config.Bind(
+                "T7 Thermal",
+                "Color Passthrough (?)",
+                false,
+                new ConfigDescription(
+                    "Use the BD-T7/S-style full-color heat-bearing buffer. " +
+                    "This bypasses palette presentation while enabled."));
+
+            Config.Bind(
+                "T7 Thermal",
+                "Palette Tuning (?)",
+                false,
+                new ConfigDescription(
+                    "Live preview for the selected palette. \nClick Save Palette to write these values to the config." +
+                    "Unsaved slider changes are discarded when you switch palettes.",
+                    null,
+                    new ConfigurationManagerAttributes
+                    {
+                        CustomDrawer = DrawPaletteTuning,
+                        HideDefaultButton = true,
+                        HideSettingName = false,
+                        IsAdvanced = true,
+                        Order = 9
+                    }));
+
+            NVNoise = Config.Bind("Night Vision", "Noise", false);
+            NVScopeDefault = Config.Bind("Night Vision", "Optic Bright Default (?)", false,
+                new ConfigDescription("Whether enable vanilla scope vision brightness when using helmet NV, which is darker in zoomable scopes"));
+            NVScopeBrightness = Config.Bind("Night Vision", "Optic Brightness (?)", 1.0f,
+                new ConfigDescription("Need disable Optic Bright Default",
+                    new AcceptableValueRange<float>(0.5f, 3f)));
+            NVT7Mask = Config.Bind("Black Screen Mask", "Helmet NV & T7", false);
+
             ScopeFps.SettingChanged += OnThermalOpticSettingChanged;
             ScopeGlitch.SettingChanged += OnThermalOpticSettingChanged;
             ScopeMotion.SettingChanged += OnThermalOpticSettingChanged;
@@ -178,71 +229,14 @@ namespace BetterVision
             ScopeRampShift.SettingChanged += OnThermalOpticSettingChanged;
             ApplyReadColorOnce.SettingChanged += OnThermalOpticSettingChanged;
 
-            T7Fps = Config.Bind("T7 Thermal", "FPS Limit", false);
-            T7Glitch = Config.Bind("T7 Thermal", "Glitch effect", false);
-            T7Motion = Config.Bind("T7 Thermal", "Motion Blur", false);
-            T7Noise = Config.Bind("T7 Thermal", "Noise", false);
-            T7Pixel = Config.Bind("T7 Thermal", "Pixelation", false);
-            T7Blur = Config.Bind("T7 Thermal", "Blur", false);
-            T7BlockScope = Config.Bind("T7 Thermal", "Block Optic Scope (?)", false,
-                new ConfigDescription(
-                    "Keep ordinary optic glass opaque and incompatible with helmet thermal. " +
-                    "Native thermal scopes still use the Thermal Optic settings."));
-            T7BlockGlass = Config.Bind("T7 Thermal", "Block Glass", false,
-                new ConfigDescription("Keep environmental glass thermally opaque. This does not block optic or collimator materials."));
-            T7DepthFade = Config.Bind("T7 Thermal", "Depth Fade (?)", 0.01f,
-                new ConfigDescription("Lower is more visible on far distance. T7 Default is 0.03",
-                    new AcceptableValueRange<float>(0.001f, 0.050f)));
-
-            T7Palette = Config.Bind(
-                "T7 Thermal",
-                "Thermal Palette",
-                ThermalPaletteMode.WhiteHot,
-                new ConfigDescription(
-                    "Loads the saved color values for this palette. " +
-                    "Unsaved slider changes are discarded when you switch palettes.",
-                    new AcceptableValueList<string>(
-                        ThermalPaletteMode.WhiteHot,
-                        ThermalPaletteMode.BlackHot,
-                        ThermalPaletteMode.RedHot,
-                        ThermalPaletteMode.Ironbow,
-                        ThermalPaletteMode.Fusion,
-                        ThermalPaletteMode.Rainbow),
-                    new ConfigurationManagerAttributes { Order = 10 }));
-            Config.Bind(
-                "T7 Thermal",
-                "Palette Tuning",
-                false,
-                new ConfigDescription(
-                    "Live preview for the selected palette. Click Save Palette to write these values to the config.",
-                    null,
-                    new ConfigurationManagerAttributes
-                    {
-                        CustomDrawer = DrawPaletteTuning,
-                        HideDefaultButton = true,
-                        HideSettingName = true,
-                        Order = 9
-                    }));
-            T7ColorPassthrough = Config.Bind(
-                "T7 Thermal",
-                "Color Passthrough",
-                false,
-                new ConfigDescription(
-                    "Use the BD-T7/S-style full-color heat-bearing buffer. " +
-                    "This bypasses palette presentation while enabled."));
             BindT7PaletteConfig(ThermalPaletteMode.WhiteHot, 0.15f, 0.2f, -0.1f);
             BindT7PaletteConfig(ThermalPaletteMode.BlackHot, 0.45f, 0.5f, -0.9f);
-            BindT7PaletteConfig(ThermalPaletteMode.RedHot, 0.15f, 0.2f, -0.1f);
+            BindT7PaletteConfig(ThermalPaletteMode.RedHot, 0.7f, 0.05f, -0.45f);
             BindT7PaletteConfig(ThermalPaletteMode.Ironbow, 0.7f, 0.07f, 0.07f);
-            BindT7PaletteConfig(ThermalPaletteMode.Fusion, 0.80f, 0.1f, 0.05f);
-            BindT7PaletteConfig(ThermalPaletteMode.Rainbow, 0.80f, 0.1f, 0.05f);
-            if (oldVersion < 133)
-                ForcePaletteValues(ThermalPaletteMode.RedHot, 0.15f, 0.2f, -0.1f);
-            if (oldVersion < 134)
-                ForcePaletteValues(ThermalPaletteMode.Ironbow, 0.7f, 0.07f, 0.07f);
-            if (oldVersion < ConfigVersion)
-                ConfigFileVersion.Value = ConfigVersion;
+            BindT7PaletteConfig(ThermalPaletteMode.Fusion, 0.8f, 0.1f, 0.05f);
+            BindT7PaletteConfig(ThermalPaletteMode.Rainbow, 0.8f, 0.1f, 0.05f);
             LoadWorkingFromPalette(T7Palette.Value);
+
             T7Palette.SettingChanged += OnT7PaletteChanged;
             T7ColorPassthrough.SettingChanged += OnT7PassthroughSettingChanged;
             T7Fps.SettingChanged += OnT7ClaritySettingChanged;
@@ -253,13 +247,6 @@ namespace BetterVision
             T7Blur.SettingChanged += OnT7ClaritySettingChanged;
             T7DepthFade.SettingChanged += OnT7ClaritySettingChanged;
 
-            NVNoise = Config.Bind("Night Vision", "Noise", false);
-            NVScopeDefault = Config.Bind("Night Vision", "Optic Bright Default (?)", false,
-                new ConfigDescription("Whether enable vanilla scope vision brightness when using helmet NV, which is darker in zoomable scopes"));
-            NVScopeBrightness = Config.Bind("Night Vision", "Optic Brightness (?)", 1.0f,
-                new ConfigDescription("Need disable Optic Bright Default",
-                    new AcceptableValueRange<float>(0.5f, 3f)));
-            NVT7Mask = Config.Bind("Black Screen Mask", "Helmet NV & T7", false);
             NVNoise.SettingChanged += OnNVNoiseSettingChanged;
             NVScopeDefault.SettingChanged += OnNVScopeSettingChanged;
             NVScopeBrightness.SettingChanged += OnNVScopeSettingChanged;
